@@ -1,0 +1,91 @@
+body {
+  background-color: black;
+}
+
+#canvas_container
+{
+  overflow: hidden;
+  padding-top:10px;
+  position: relative;
+  visibility: hidden;
+  z-index: 10;
+}
+
+.background {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  position: fixed;
+  background: #000000;
+}
+#quota_container {
+  display: none;
+}
+
+#quota {
+  position: relative;
+  top: 40vh;
+  font-family: monospace;
+  font-size: 1.5vw;
+  color: white;
+}
+
+#canvas
+{
+  position: relative;
+  border:rgba(177, 0, 255, 0.7) 5px solid;
+  border-radius: 5px;
+}
+
+#start
+{
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  padding-left: 2em;
+  padding-right: 2em;
+  visibility: hidden;
+  font-family: monospace;
+  font-size: 3.6vw;
+  color: rgb(0, 180, 0);
+  background-color: rgba(0,0,0,0.0);
+  border:rgba(177, 0, 255, 0.7) 2px solid;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#score, #global_score, #qaStaHnuqjay
+{
+  position: absolute;
+  top: 1rem;
+  /* float:right; */
+  font-family: monospace;
+  font-size: 1.6vw;
+  color: rgb(200, 200, 200);
+  background-color: rgba(0,0,0,0.0);
+}
+#global_score
+{
+  right: 0;
+  padding-left: 0;
+  padding-right: 0.5rem;
+  text-align: right;
+}
+#score
+{
+  left: 0;
+  padding-left: 2.5rem;
+  padding-right: 0;
+  text-align: left;
+}
+
+#qaStaHnuqjay
+{
+  text-align: center;
+  font-size: 3.2vw;
+  color: rgba(200, 200, 200, 1);
+  z-index: 5;
+}

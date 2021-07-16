@@ -1,0 +1,11 @@
+{
+  "name": "hermatrix-asteroids-client",
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "client": "node client.js"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.1.3"
+  }
+}
