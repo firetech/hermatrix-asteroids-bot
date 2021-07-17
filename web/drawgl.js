@@ -98,10 +98,10 @@ const _DrawGL2 = class extends Draw {
       } else if (this.shootTargets.includes(asteroid)) {
         mode = 3;
       }
-      this.renderAsteroid(asteroid.position, asteroid.orientation, asteroid.template_idx, asteroid.scale, mode);
+      this.renderAsteroid(asteroid.position, asteroid.orientation, asteroid.template_idx, asteroid.scale, mode, asteroid.velocity);
     });
     data.bullets.forEach((bullet) => {
-      this.renderBullet(bullet.position);
+      this.renderBullet(bullet.position, bullet.velocity);
     });
   }
   renderShip(position, orientation) {
@@ -131,7 +131,7 @@ const _DrawGL2 = class extends Draw {
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
-  renderAsteroid(position, orientation, template_idx, scale, targetMode) {
+  renderAsteroid(position, orientation, template_idx, scale, targetMode, velocity) {
     if (this.program == null) {
       return;
     }
@@ -174,9 +174,10 @@ const _DrawGL2 = class extends Draw {
     const len = coords.length / 3;
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.LINE_LOOP, 0, len);
-    this.renderBullet(position);
+
+    this.renderBullet(position, [velocity[0]*10, velocity[1]*10]);
   }
-  renderBullet(position) {
+  renderBullet(position, velocity) {
     if (this.program == null) {
       return;
     }
@@ -198,6 +199,20 @@ const _DrawGL2 = class extends Draw {
     const len = coords.length / 3;
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.LINES, 0, len);
+
+    coords = [];
+    coords.push(0, 0, 0, velocity[0], velocity[1], 0);
+    const mesh2 = this.Mesh(coords);
+    if (mesh2 == null) {
+      return;
+    }
+    transform = mat4.create();
+    mat4.translate(transform, transform, [x, y, 0]);
+    gl.uniform4fv(gl.getUniformLocation(this.program, "fColor"), [0, 1, 0, 1]);
+    gl.uniformMatrix4fv(gl.getUniformLocation(this.program, "transformation"), false, transform);
+    const len2 = coords.length / 3;
+    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+    gl.drawArrays(gl.LINES, 0, len2);
   }
   draw() {
     this.renderViewport();

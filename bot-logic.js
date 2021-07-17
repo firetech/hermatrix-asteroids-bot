@@ -1,5 +1,7 @@
 'use strict';
 
+const BULLET_SPEED = 38.4;
+
 export default class Bot {
   constructor(socket) {
     this.socket = socket;
@@ -8,6 +10,7 @@ export default class Bot {
     this.shooting = false;
     this.gotoCenter = false;
     this.finalSpeed = false;
+    this.shootTargets = [];
   }
 
   dist(pos) {
@@ -82,14 +85,16 @@ export default class Bot {
     let targetDistance = null;
     let targetAngleDiff = null;
     let targetCollision = false;
-    const shootTargets = [];
+    let shouldShoot = false;
+    const lastShootTargets = this.shootTargets;
+    this.shootTargets = [];
     const distFromCenter = this.dist(shipPos);
     if (!this.gotoCenter && distFromCenter > 500) {
       this.gotoCenter = true
     } else if (this.gotoCenter && distFromCenter < 150) {
       this.gotoCenter = false;
     }
-    serverdata.asteroids.forEach((asteroid, index) => {
+    serverdata.asteroids.forEach((asteroid) => {
       let setTarget = false;
       const vel = asteroid.velocity;
       const nowPos = asteroid.position;
@@ -97,7 +102,7 @@ export default class Bot {
         nowPos[0] - shipPos[0],
         nowPos[1] - shipPos[1]
       ]);
-      let ticksToReach = currentDistance / 38.5;
+      let ticksToReach = currentDistance / BULLET_SPEED;
       let lastTicksToReach;
       let targetPos;
       do {
@@ -106,12 +111,38 @@ export default class Bot {
           nowPos[1] + vel[1] * ticksToReach - shipPos[1]
         ];
         lastTicksToReach = ticksToReach;
-        ticksToReach = this.dist(targetPos) / 38.5;
+        ticksToReach = this.dist(targetPos) / BULLET_SPEED;
       } while (Math.abs(ticksToReach - lastTicksToReach) > 1);
       const desiredAngle = Math.atan2(targetPos[1], targetPos[0]) * (180.0 / Math.PI);
       const angleDiff = this.angDiff(desiredAngle, currentAngle);
-      if (Math.abs(angleDiff) < 7.5) {
-        shootTargets.push(asteroid);
+      const inSight = Math.abs(angleDiff) < 2.5;
+      if (inSight) {
+        shouldShoot = true;
+      }
+      if (drawObj) {
+        let foundShootTarget = {};
+        const isShootTarget = inSight || lastShootTargets.some(
+          (shootTarget) => {
+            if(shootTarget.ticksToReach > 0 &&
+                shootTarget.template_idx == asteroid.template_idx &&
+                shootTarget.scale == asteroid.scale &&
+                shootTarget.orientation == asteroid.orientation &&
+                shootTarget.velocity[0] == asteroid.velocity[0] &&
+                shootTarget.velocity[1] == asteroid.velocity[1] &&
+                shootTarget.position[0] + shootTarget.velocity[0] == asteroid.position[0] &&
+                shootTarget.position[1] + shootTarget.velocity[1] == asteroid.position[1]) {
+              foundShootTarget = shootTarget;
+              return true;
+            }
+            return false;
+          });
+        if (isShootTarget) {
+          this.shootTargets.push({
+            ...asteroid,
+            obj: asteroid,
+            ticksToReach: (inSight ? ticksToReach : foundShootTarget.ticksToReach - 1)
+          });
+        }
       }
 
       const relVelocity = -((vel[0] - shipVel[0]) * (nowPos[0] - shipPos[0]) + (vel[1] - shipVel[1]) * (nowPos[1] - shipPos[1])) / currentDistance;
@@ -151,12 +182,12 @@ export default class Bot {
     }
     if (drawObj) {
       drawObj.setTarget(target, !!targetCollision);
-      drawObj.setShootTargets(shootTargets);
+      drawObj.setShootTargets(this.shootTargets.map((data) => data.obj));
     }
-    if (shootTargets.length > 0 && !this.shooting) {
+    if (shouldShoot && !this.shooting) {
       this.socket.emit('ast.keydown', 'Space');
       this.shooting = true;
-    } else if (shootTargets.length <= 0 && this.shooting) {
+    } else if (!shouldShoot && this.shooting) {
       this.socket.emit('ast.keyup', 'Space');
       this.shooting = false;
     }
