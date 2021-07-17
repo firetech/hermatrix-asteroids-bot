@@ -7,6 +7,7 @@ export default class Bot {
     this.heldSpeed = null;
     this.shooting = false;
     this.gotoCenter = false;
+    this.finalSpeed = false;
   }
 
   dist(pos) {
@@ -39,6 +40,7 @@ export default class Bot {
       this.socket.emit("ast.keyup", `Arrow${this.heldSpeed[0]}`);
       this.heldSpeed = null;
     }
+    this.finalSpeed = false;
   }
   speed(dir, currentSpeed) {
     console.log(`Speed ${dir} (${currentSpeed.toFixed(2)})`);
@@ -46,7 +48,8 @@ export default class Bot {
     if (!this.heldSpeed || this.heldSpeed[0] != dir) {
       this.socket.emit("ast.keydown", `Arrow${dir}`);
     }
-    this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), Math.max(25 * Math.abs(currentSpeed), 40)) ];
+    const holdTime = Math.min(Math.max(40, 25 * Math.abs(currentSpeed)), 100);
+    this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), holdTime) ];
   }
 
   tick(serverdata, drawObj = null) {
@@ -70,13 +73,16 @@ export default class Bot {
       this.speed('Up', currentSpeed);
     } else if (currentSpeed > 1.25) {
       this.speed('Down', currentSpeed);
+    } else if (!this.finalSpeed && !this.heldSpeed) {
+      console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
+      this.finalSpeed = true;
     }
     // Select target asteroid
     let target = null;
     let targetDistance = null;
     let targetAngleDiff = null;
     let targetCollision = false;
-    let shouldShoot = false;
+    const shootTargets = [];
     const distFromCenter = this.dist(shipPos);
     if (!this.gotoCenter && distFromCenter > 500) {
       this.gotoCenter = true
@@ -105,7 +111,7 @@ export default class Bot {
       const desiredAngle = Math.atan2(targetPos[1], targetPos[0]) * (180.0 / Math.PI);
       const angleDiff = this.angDiff(desiredAngle, currentAngle);
       if (Math.abs(angleDiff) < 7.5) {
-        shouldShoot = true;
+        shootTargets.push(asteroid);
       }
 
       const relVelocity = -((vel[0] - shipVel[0]) * (nowPos[0] - shipPos[0]) + (vel[1] - shipVel[1]) * (nowPos[1] - shipPos[1])) / currentDistance;
@@ -140,14 +146,17 @@ export default class Bot {
       const desiredAngle = Math.atan2(-shipPos[1], -shipPos[0]) * (180.0 / Math.PI);
       targetAngleDiff = this.angDiff(desiredAngle, currentAngle);
       target = null;
+    } else if (this.gotoCenter && distFromCenter < 300) {
+      this.gotoCenter = false;
     }
     if (drawObj) {
       drawObj.setTarget(target, !!targetCollision);
+      drawObj.setShootTargets(shootTargets);
     }
-    if (shouldShoot && !this.shooting) {
+    if (shootTargets.length > 0 && !this.shooting) {
       this.socket.emit('ast.keydown', 'Space');
       this.shooting = true;
-    } else if (!shouldShoot && this.shooting) {
+    } else if (shootTargets.length <= 0 && this.shooting) {
       this.socket.emit('ast.keyup', 'Space');
       this.shooting = false;
     }

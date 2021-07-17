@@ -92,7 +92,13 @@ const _DrawGL2 = class extends Draw {
     gl.uniformMatrix4fv(gl.getUniformLocation(this.program, "view"), false, view);
     this.renderShip(data.ship.position, data.ship.orientation);
     data.asteroids.forEach((asteroid) => {
-      this.renderAsteroid(asteroid.position, asteroid.orientation, asteroid.template_idx, asteroid.scale, (this.target && this.target[0] == asteroid ? this.target[1] : null));
+      let mode = 0;
+      if (this.target && this.target[0] == asteroid) {
+        mode = (this.target[1] ? 1 : 2);
+      } else if (this.shootTargets.includes(asteroid)) {
+        mode = 3;
+      }
+      this.renderAsteroid(asteroid.position, asteroid.orientation, asteroid.template_idx, asteroid.scale, mode);
     });
     data.bullets.forEach((bullet) => {
       this.renderBullet(bullet.position);
@@ -125,7 +131,7 @@ const _DrawGL2 = class extends Draw {
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
-  renderAsteroid(position, orientation, template_idx, scale, targetState) {
+  renderAsteroid(position, orientation, template_idx, scale, targetMode) {
     if (this.program == null) {
       return;
     }
@@ -148,7 +154,21 @@ const _DrawGL2 = class extends Draw {
     mat4.translate(transform, transform, [position[0], position[1], 0]);
     mat4.rotate(transform, transform, orientation / 180 * Math.PI, [0, 0, 1]);
     mat4.scale(transform, transform, [scale, scale, 1]);
-    const color = (targetState ? [1, 0, 0, 1] : (targetState !== null ? [0.7, 0, 1, 1] : [1, 1, 1, 1]));
+    let color;
+    switch (targetMode) {
+      case 1:
+        color = [1, 0, 0, 1];
+        break;
+      case 2:
+        color = [0.7, 0, 1, 1];
+        break;
+      case 3:
+        color = [0, 0.7, 1, 1];
+        break;
+      default:
+        color = [1, 1, 1, 1];
+        break;
+    }
     gl.uniform4fv(gl.getUniformLocation(this.program, "fColor"), color);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.program, "transformation"), false, transform);
     const len = coords.length / 3;

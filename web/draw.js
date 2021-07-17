@@ -3,6 +3,7 @@ export class Draw {
   constructor(canvas) {
     this.data = null;
     this.target = null;
+    this.shootTargets = [];
     this.gameState = GameState.Stopped;
     this.lastGameState = GameState.Stopped;
     this.lastDataTimestamp = 0;
@@ -39,6 +40,9 @@ export class Draw {
     } else {
       this.target = null;
     }
+  }
+  setShootTargets(targets) {
+    this.shootTargets = targets;
   }
   loadAsteroidTemplates() {
     const self = this;
