@@ -7,6 +7,7 @@ $(document).ready(() => {
   var socket;
   const container = document.getElementById("canvas_container");
   const canvas = document.getElementById("canvas");
+  const autorestart = document.getElementById("autorestart");
   const ctx = canvas.getContext("webgl2");
   const start = document.getElementById("start");
   const score = document.getElementById("score");
@@ -144,7 +145,12 @@ $(document).ready(() => {
     }
   });
   function showRestart() {
-    start.innerText = "RESTART";
+    if (autorestart.checked) {
+      start.innerText = "RESTARTING IN 2s...";
+      setTimeout(() => start.click(), 2000);
+    } else {
+      start.innerText = "RESTART";
+    }
     $("#start").show();
   }
 });

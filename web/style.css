@@ -89,3 +89,17 @@ body {
   color: rgba(200, 200, 200, 1);
   z-index: 5;
 }
+
+#autorestart_container
+{
+  position: absolute;
+  bottom: 0;
+  left: 1em;
+  background: black;
+  border-radius: 5px;
+  user-select: none;
+}
+#autorestart_container label {
+  padding-left: 0.5em;
+  color :rgba(177, 0, 255, 0.7);
+}
