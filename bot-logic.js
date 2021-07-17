@@ -128,7 +128,7 @@ export default class Bot {
           targetAngleDiff = angleDiff;
           targetCollision = timeToHit;
         }
-      } else if (!targetCollision && !this.gotoCenter) {
+      } else if (!targetCollision) {
         if (targetDistance === null || currentDistance < targetDistance) {
           target = asteroid;
           targetAngleDiff = angleDiff;
@@ -136,10 +136,10 @@ export default class Bot {
         }
       }
     });
-    if (this.gotoCenter && !targetCollision) {
+    if (this.gotoCenter && !targetCollision && targetDistance > 300) {
       const desiredAngle = Math.atan2(-shipPos[1], -shipPos[0]) * (180.0 / Math.PI);
       targetAngleDiff = this.angDiff(desiredAngle, currentAngle);
-      target = null; // Should already be null, but whatever.
+      target = null;
     }
     if (drawObj) {
       drawObj.setTarget(target, !!targetCollision);
