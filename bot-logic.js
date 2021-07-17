@@ -7,6 +7,7 @@ export default class Bot {
     this.socket = socket;
     this.heldDir = null;
     this.heldSpeed = null;
+    this.speedStatus = {};
     this.shooting = false;
     this.gotoCenter = false;
     this.finalSpeed = false;
@@ -65,21 +66,37 @@ export default class Bot {
     } else if (currentAngle > 180) {
       currentAngle -= 360;
     }
+
     // Slow down to a halt
-    const velAngle = Math.atan2(shipVel[1], shipVel[0]) * (180.0 / Math.PI);
-    const velAngleDiff = this.angDiff(currentAngle, velAngle);
-    let currentSpeed = this.dist(shipVel);
-    if (velAngleDiff > 95 || velAngleDiff < -95) {
-      currentSpeed = -currentSpeed;
+    if (!this.speedStatus.givenUp) {
+      const velAngle = Math.atan2(shipVel[1], shipVel[0]) * (180.0 / Math.PI);
+      const velAngleDiff = this.angDiff(currentAngle, velAngle);
+      let currentSpeed = this.dist(shipVel);
+      if (velAngleDiff > 95 || velAngleDiff < -95) { // Reversing
+        currentSpeed = -currentSpeed;
+      }
+      const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
+      if (sameSpeed && this.speedStatus.count >= 25) {
+        // Game is lagging too much, skip speed control.
+        console.log(`Speed control giving up at ${currentSpeed.toFixed(2)}`);
+        this.speedStatus.givenUp = true;
+      } else {
+        if (currentSpeed < 0) {
+          this.speed('Up', currentSpeed);
+        } else if (currentSpeed > 1.25) {
+          this.speed('Down', currentSpeed);
+        } else if (!this.finalSpeed && !this.heldSpeed) {
+          console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
+          this.finalSpeed = true;
+        }
+        this.speedStatus = {
+          lastSpeed: currentSpeed,
+          count: (sameSpeed ? this.speedStatus.count + 1 : 1),
+          givenUp: false
+        };
+      }
     }
-    if (currentSpeed < 0) {
-      this.speed('Up', currentSpeed);
-    } else if (currentSpeed > 1.25) {
-      this.speed('Down', currentSpeed);
-    } else if (!this.finalSpeed && !this.heldSpeed) {
-      console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
-      this.finalSpeed = true;
-    }
+
     // Select target asteroid
     let target = null;
     let targetDistance = null;
