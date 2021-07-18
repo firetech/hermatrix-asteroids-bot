@@ -179,7 +179,7 @@ export default class Bot {
         collisionRisk = closestDistance < 150;
       }
       if (collisionRisk) {
-        if (!targetCollision || (timeToHit < targetCollision * 0.75 && angleDiff < targetAngleDiff)) {
+        if (!targetCollision || timeToHit < targetCollision * 0.5 || Math.abs(angleDiff) < Math.abs(targetAngleDiff)) {
           target = asteroid;
           targetAngleDiff = angleDiff;
           targetCollision = timeToHit;
