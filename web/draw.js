@@ -1,4 +1,5 @@
 import {GameState, IsGameState} from "./common.js";
+
 export class Draw {
   constructor(canvas) {
     this.data = null;
@@ -7,6 +8,7 @@ export class Draw {
     this.gameState = GameState.Stopped;
     this.lastGameState = GameState.Stopped;
     this.lastDataTimestamp = 0;
+    this.tickFactor = 1.0;
     this.lastDrawTimestamp = 0;
     this.asteroid_templates = [];
     this.ship_template = [];
@@ -32,7 +34,11 @@ export class Draw {
     if (IsGameState(this.gameState)) {
       this.data = data;
     }
-    this.lastDataTimestamp = Date.now();
+    const dataTimestamp = Date.now();
+    if (this.lastDataTimestamp) {
+      this.tickFactor = 100 / (dataTimestamp - this.lastDataTimestamp);
+    }
+    this.lastDataTimestamp = dataTimestamp;
   }
   setTarget(asteroid, priority) {
     if (asteroid) {

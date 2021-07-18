@@ -47,13 +47,13 @@ export default class Bot {
     this.finalSpeed = false;
   }
   speed(dir, currentSpeed) {
-    console.log(`Speed ${dir} (${currentSpeed.toFixed(2)})`);
-    this.cancelSpeed();
     if (!this.heldSpeed || this.heldSpeed[0] != dir) {
+      console.log(`Speed ${dir} (${currentSpeed.toFixed(2)})`);
+      this.cancelSpeed();
       this.socket.emit("ast.keydown", `Arrow${dir}`);
+      const holdTime = Math.min(Math.max(40, 25 * Math.abs(currentSpeed)), 100);
+      this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), holdTime) ];
     }
-    const holdTime = Math.min(Math.max(40, 25 * Math.abs(currentSpeed)), 100);
-    this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), holdTime) ];
   }
 
   tick(serverdata, drawObj = null) {
@@ -66,17 +66,17 @@ export default class Bot {
     } else if (currentAngle > 180) {
       currentAngle -= 360;
     }
+    const velAngle = Math.atan2(shipVel[1], shipVel[0]) * (180.0 / Math.PI);
+    const velAngleDiff = this.angDiff(currentAngle, velAngle);
+    let currentSpeed = this.dist(shipVel);
+    if (velAngleDiff > 95 || velAngleDiff < -95) { // Reversing
+      currentSpeed = -currentSpeed;
+    }
 
     // Slow down to a halt
     if (!this.speedStatus.givenUp) {
-      const velAngle = Math.atan2(shipVel[1], shipVel[0]) * (180.0 / Math.PI);
-      const velAngleDiff = this.angDiff(currentAngle, velAngle);
-      let currentSpeed = this.dist(shipVel);
-      if (velAngleDiff > 95 || velAngleDiff < -95) { // Reversing
-        currentSpeed = -currentSpeed;
-      }
       const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
-      if (sameSpeed && this.speedStatus.count >= 25) {
+      if (sameSpeed && this.speedStatus.count >= 25 && (currentSpeed < 0 || currentSpeed > 1.25)) {
         // Game is lagging too much, skip speed control.
         console.log(`Speed control giving up at ${currentSpeed.toFixed(2)}`);
         this.speedStatus.givenUp = true;
@@ -85,7 +85,9 @@ export default class Bot {
           this.speed('Up', currentSpeed);
         } else if (currentSpeed > 1.25) {
           this.speed('Down', currentSpeed);
-        } else if (!this.finalSpeed && !this.heldSpeed) {
+        } else if (this.heldSpeed) {
+          this.cancelSpeed();
+        } else if (!this.finalSpeed) {
           console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
           this.finalSpeed = true;
         }
@@ -132,7 +134,7 @@ export default class Bot {
       } while (Math.abs(ticksToReach - lastTicksToReach) > 1);
       const desiredAngle = Math.atan2(targetPos[1], targetPos[0]) * (180.0 / Math.PI);
       const angleDiff = this.angDiff(desiredAngle, currentAngle);
-      const inSight = Math.abs(angleDiff) < 2.5;
+      const inSight = Math.abs(angleDiff) <= 5;
       if (inSight) {
         shouldShoot = true;
       }
@@ -191,7 +193,15 @@ export default class Bot {
       }
     });
     if (this.gotoCenter && !targetCollision && targetDistance > 300) {
-      const desiredAngle = Math.atan2(-shipPos[1], -shipPos[0]) * (180.0 / Math.PI);
+      let centerTarget;
+      if (currentSpeed >= 0) {
+        // Center is (0, 0), so the heading there is the reverse of the vector given by the current position.
+        centerTarget = [-shipPos[0], -shipPos[1]];
+      } else {
+        // Ship is reversing, so target away from center.
+        centerTarget = [shipPos[0], shipPos[1]];
+      }
+      const desiredAngle = Math.atan2(centerTarget[1], centerTarget[0]) * (180.0 / Math.PI);
       targetAngleDiff = this.angDiff(desiredAngle, currentAngle);
       target = null;
     } else if (this.gotoCenter && distFromCenter < 300) {

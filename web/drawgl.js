@@ -223,7 +223,7 @@ const _DrawGL2 = class extends Draw {
     const lastTimestamp = Math.max(this.lastDataTimestamp, this.lastDrawTimestamp);
     const now = Date.now();
     const timediff = now - lastTimestamp;
-    const factor = 1 / (100 / timediff);
+    const factor = (1 / (100 / timediff)) * this.tickFactor;
     if (this.gameState == GameState.Running && timediff < 1e3) {
       data.ship.position = this.addVelocity(data.ship.position, data.ship.velocity, factor);
       data.asteroids.forEach((asteroid, idx) => {
