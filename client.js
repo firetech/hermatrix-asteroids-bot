@@ -10,6 +10,7 @@ let bot;
 let lastGameState = GameState.Stopped;
 let gameState = GameState.Stopped;
 let lastScore = -1;
+let topScore = 0;
 startup();
 
 
@@ -69,7 +70,10 @@ function configureSocket() {
     if (IsGameState(gameState)) {
       bot.tick(serverdata);
       if (serverdata.score != lastScore) {
-        console.log(`Score: ${serverdata.score}`);
+        if (serverdata.score > topScore) {
+          topScore = serverdata.score;
+        }
+        console.log(`Score: ${serverdata.score} (${topScore})`);
         lastScore = serverdata.score;
       }
     }
