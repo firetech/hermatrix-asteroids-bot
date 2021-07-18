@@ -36,7 +36,7 @@ export class Draw {
     }
     const dataTimestamp = Date.now();
     if (this.lastDataTimestamp) {
-      this.tickFactor = 100 / (dataTimestamp - this.lastDataTimestamp);
+      this.tickFactor = 64 / (dataTimestamp - this.lastDataTimestamp);
     }
     this.lastDataTimestamp = dataTimestamp;
   }
