@@ -10,7 +10,6 @@ export default class Bot {
     this.speedStatus = {};
     this.shooting = false;
     this.gotoCenter = false;
-    this.finalSpeed = false;
     this.shootTargets = [];
   }
 
@@ -44,7 +43,6 @@ export default class Bot {
       this.socket.emit("ast.keyup", `Arrow${this.heldSpeed[0]}`);
       this.heldSpeed = null;
     }
-    this.finalSpeed = false;
   }
   speed(dir, currentSpeed) {
     if (!this.heldSpeed || this.heldSpeed[0] != dir) {
@@ -74,27 +72,28 @@ export default class Bot {
     }
 
     // Slow down to a halt
-    if (!this.speedStatus.givenUp) {
+    if (!this.speedStatus.done) {
       const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
-      if (sameSpeed && this.speedStatus.count >= 25 && (currentSpeed < 0 || currentSpeed > 1.25)) {
-        // Game is lagging too much, skip speed control.
-        console.log(`Speed control giving up at ${currentSpeed.toFixed(2)}`);
-        this.speedStatus.givenUp = true;
+      if (sameSpeed && this.speedStatus.count >= 25) {
+        if (currentSpeed < 0 || currentSpeed > 1.25) {
+          // Game is lagging too much, skip speed control.
+          console.log(`Speed control giving up at ${currentSpeed.toFixed(2)}`);
+        } else {
+          console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
+        }
+        this.speedStatus.done = true;
       } else {
         if (currentSpeed < 0) {
           this.speed('Up', currentSpeed);
         } else if (currentSpeed > 1.25) {
           this.speed('Down', currentSpeed);
-        } else if (this.heldSpeed) {
+        } else {
           this.cancelSpeed();
-        } else if (!this.finalSpeed) {
-          console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
-          this.finalSpeed = true;
         }
         this.speedStatus = {
           lastSpeed: currentSpeed,
           count: (sameSpeed ? this.speedStatus.count + 1 : 1),
-          givenUp: false
+          done: false
         };
       }
     }
