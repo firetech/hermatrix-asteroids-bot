@@ -98,7 +98,7 @@ export default class Bot {
     if (!this.speedStatus.done) {
       const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
       if (sameSpeed && this.speedStatus.count >= 25) {
-        if (currentSpeed < 0 || currentSpeed > 1.25) {
+        if (currentSpeed < 0 || currentSpeed > 0.5) {
           // Game is lagging too much, skip speed control.
           console.log(`Speed control giving up at ${currentSpeed.toFixed(2)}`);
         } else {
@@ -108,7 +108,7 @@ export default class Bot {
       } else {
         if (currentSpeed < 0) {
           this.speed('Up', currentSpeed);
-        } else if (currentSpeed > 1.25) {
+        } else if (currentSpeed > 0.5) {
           this.speed('Down', currentSpeed);
         } else {
           this.cancelSpeed();
@@ -160,7 +160,7 @@ export default class Bot {
       if (inSight) {
         shouldShoot = true;
       }
-      if (drawObj) {
+      if (drawObj && drawObj.setShootTargets) {
         let foundShootTarget = {};
         const isShootTarget = inSight || lastShootTargets.some(
           (shootTarget) => {
@@ -229,8 +229,10 @@ export default class Bot {
     } else if (this.gotoCenter && distFromCenter <= 300) {
       this.gotoCenter = false;
     }
-    if (drawObj) {
+    if (drawObj && drawObj.setTarget) {
       drawObj.setTarget(target, !!targetCollision);
+    }
+    if (drawObj && drawObj.setShootTargets) {
       drawObj.setShootTargets(this.shootTargets.map((data) => data.obj));
     }
     if (shouldShoot && !this.shooting) {
