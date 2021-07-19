@@ -2,7 +2,6 @@
  * The "brains" of my bot for playing the Asteroid game that was part of the
  * hermatrix.net ARG in July 2021.
  *
- *
  * Copyright 2021 Joakim "firetech" Tufvegren
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -33,10 +32,8 @@ export default class Bot {
     this.socket = socket;
     this.heldDir = null;
     this.heldSpeed = null;
-    this.speedStatus = {};
     this.shooting = false;
-    this.gotoCenter = false;
-    this.shootTargets = [];
+    this.dead();
   }
 
   dist(pos) {
@@ -229,7 +226,7 @@ export default class Bot {
       const desiredAngle = Math.atan2(centerTarget[1], centerTarget[0]) * (180.0 / Math.PI);
       targetAngleDiff = this.angDiff(desiredAngle, currentAngle);
       target = null;
-    } else if (this.gotoCenter && distFromCenter < 300) {
+    } else if (this.gotoCenter && distFromCenter <= 300) {
       this.gotoCenter = false;
     }
     if (drawObj) {
@@ -258,5 +255,8 @@ export default class Bot {
       this.socket.emit('ast.keyup', 'Space');
       this.shooting = false;
     }
+    this.gotoCenter = false;
+    this.speedStatus = {};
+    this.shootTargets = [];
   }
 };
