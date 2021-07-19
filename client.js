@@ -7,6 +7,7 @@ import Bot from "./bot-logic.js";
 console.log('init');
 let socket;
 let bot;
+let qaStaHnuqjayData = '';
 let lastGameState = GameState.Stopped;
 let gameState = GameState.Stopped;
 let lastScore = -1;
@@ -104,6 +105,7 @@ function configureSocket() {
 }
 function getqaStaHnuqjay() {
   return httpget('/asteroids/qaStaHnuqjay').then((data) => {
+    qaStaHnuqjayData = data;
     console.log(`qaStaHnuqjay: ${data}`);
   });
 }
