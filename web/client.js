@@ -79,6 +79,9 @@ $(document).ready(() => {
   allowedKeys.add("ArrowLeft");
   allowedKeys.add("Space");
   $(window).keydown(function(event) {
+    if (bot.isEnabled()) {
+      return
+    }
     const key = event.code;
     if (!allowedKeys.has(key)) {
       return;
@@ -86,6 +89,9 @@ $(document).ready(() => {
     socket.emit("ast.keydown", key);
   });
   $(window).keyup(function(event) {
+    if (bot.isEnabled()) {
+      return
+    }
     const key = event.code;
     if (!allowedKeys.has(key)) {
       return;

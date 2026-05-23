@@ -26,13 +26,14 @@
 'use strict';
 
 const BULLET_SPEED = 38.4;
+const ACCEL_STEP = 0.64;
 
 export default class Bot {
   constructor(socket) {
     this.enabled = true;
     this.socket = socket;
     this.heldDir = null;
-    this.heldSpeed = null;
+    this.heldAccel = null;
     this.shooting = false;
     this.dead();
   }
@@ -61,20 +62,17 @@ export default class Bot {
     }
   }
 
-  cancelSpeed() {
-    if (this.heldSpeed) {
-      clearTimeout(this.heldSpeed[1]);
-      this.socket.emit("ast.keyup", `Arrow${this.heldSpeed[0]}`);
-      this.heldSpeed = null;
+  cancelAccel() {
+    if (this.heldAccel) {
+      this.socket.emit("ast.keyup", `Arrow${this.heldAccel}`);
+      this.heldAccel = null;
     }
   }
-  speed(dir, currentSpeed) {
-    if (this.enabled && (!this.heldSpeed || this.heldSpeed[0] != dir)) {
-      console.log(`Speed ${dir} (${currentSpeed.toFixed(2)})`);
-      this.cancelSpeed();
+  accel(dir, currentSpeed) {
+    if (this.enabled && (!this.heldAccel || this.heldAccel != dir)) {
+      this.cancelAccel();
       this.socket.emit("ast.keydown", `Arrow${dir}`);
-      const actualHoldTime = Math.min(Math.max(40, 20 * Math.abs(currentSpeed)), 100);
-      this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), actualHoldTime) ];
+      this.heldAccel = dir;
     }
   }
 
@@ -86,6 +84,12 @@ export default class Bot {
     if (!value) {
       this.dead();
     }
+    // Make sure all keys are in the expected state.
+    this.socket.emit("ast.keyup", "ArrowUp");
+    this.socket.emit("ast.keyup", "ArrowDown");
+    this.socket.emit("ast.keyup", "ArrowLeft");
+    this.socket.emit("ast.keyup", "ArrowRight");
+    this.socket.emit("ast.keyup", "Space");
   }
 
   tick(serverdata, drawObj = null) {
@@ -108,35 +112,57 @@ export default class Bot {
       currentSpeed = -currentSpeed;
     }
 
-    // Slow down to a halt
-    const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
+    // Slow down to a halt to make the math simpler.
+    const deltaSpeed = this.speedStatus.lastSpeed - currentSpeed;
+    const sameSpeed = Math.abs(deltaSpeed) < 1e-3;
     if (this.speedStatus.done && !sameSpeed) {
       // Someone changed the speed.
       this.speedStatus = {};
     }
     if (!this.speedStatus.done) {
-      if (sameSpeed && this.speedStatus.count >= 25) {
-        if (currentSpeed < 0 || currentSpeed > 0.5) {
-          // Game is lagging too much, skip speed control.
-          console.log(`Speed control giving up at ${currentSpeed.toFixed(2)}`);
+      if (!this.heldAccel && sameSpeed && this.speedStatus.count >= 10) {
+        // By immediately following a number of ticks with one arrow pressed
+        // with the same amount of ticks with the opposite arrow pressed, the
+        // added acceleration is accurately cancelled.
+        if (Math.abs(currentSpeed) > ACCEL_STEP/2) {
+          const times = Math.round(
+            Math.sqrt(Math.abs(currentSpeed) / ACCEL_STEP)
+          );
+          if (currentSpeed < 0) {
+            this.speedStatus.next = [['Up', times], ['Down', times]];
+          } else {
+            this.speedStatus.next = [['Down', times], ['Up', times]];
+          }
+          console.log(
+            `Speed ${currentSpeed.toFixed(2)}:`,
+            `${this.speedStatus.next[0][0]} ${times} tick(s)`,
+          );
         } else {
           console.log(`Final speed: ${currentSpeed.toFixed(2)}`);
+          this.speedStatus.done = true;
         }
-        this.speedStatus.done = true;
-      } else {
-        if (currentSpeed < 0) {
-          this.speed('Up', currentSpeed);
-        } else if (currentSpeed > 0.5) {
-          this.speed('Down', currentSpeed);
-        } else {
-          this.cancelSpeed();
-        }
-        this.speedStatus = {
-          lastSpeed: currentSpeed,
-          count: (sameSpeed ? this.speedStatus.count + 1 : 1),
-          done: false
-        };
       }
+      if (this.speedStatus.next && this.speedStatus.next.length > 0) {
+        const firstTick = !this.heldAccel;
+        this.accel(this.speedStatus.next[0][0], currentSpeed);
+        if (firstTick || !sameSpeed) {
+          // Ship velocity is clamped, so watch for velocity changes before
+          // counting ticks, otherwise this will take forever.
+          // No, this will not be completely accurate, but will also only happen
+          // if a user accelerates the ship beyond maximum velocity and _then_
+          // hands over control to this code.
+          this.speedStatus.next[0][1] -= 1;
+        }
+        if (this.speedStatus.next[0][1] <= 0) {
+          this.speedStatus.next.shift();
+        }
+      } else {
+        this.cancelAccel();
+      }
+      this.speedStatus.lastSpeed = currentSpeed;
+      this.speedStatus.count = (sameSpeed && this.speedStatus.count
+                                ? this.speedStatus.count + 1
+                                : 1);
     }
 
     // Select target asteroid
@@ -270,7 +296,7 @@ export default class Bot {
   }
   dead() {
     this.stopTurn();
-    this.cancelSpeed();
+    this.cancelAccel();
     if (this.shooting) {
       this.socket.emit('ast.keyup', 'Space');
       this.shooting = false;
