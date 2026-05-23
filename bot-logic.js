@@ -72,7 +72,7 @@ export default class Bot {
       console.log(`Speed ${dir} (${currentSpeed.toFixed(2)})`);
       this.cancelSpeed();
       this.socket.emit("ast.keydown", `Arrow${dir}`);
-      const holdTime = Math.min(Math.max(40, 25 * Math.abs(currentSpeed)), 100);
+      const holdTime = Math.min(Math.max(40, 20 * Math.abs(currentSpeed)), 100);
       this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), holdTime) ];
     }
   }
