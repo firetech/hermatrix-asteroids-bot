@@ -1,4 +1,4 @@
-import standaloneSocketInit from "./common/standalone.js";
+import standaloneSocketInit from "./standalone.js";
 import {GameState, IsGameState, IsStoppedState} from "./common/common.js";
 import {DrawGL2} from "./drawgl.js";
 import Bot from "./bot-logic.js";

@@ -1,4 +1,5 @@
-import standaloneSocketInit from "./common/standalone.js";
+import SocketEmulator from "./common/socketemul.js";
+import {Wrapper as AsteroidsServer} from "./common/main.js";
 import {GameState, IsGameState, IsStoppedState} from './common/common.js';
 import Bot from "./bot-logic.js";
 
@@ -22,7 +23,8 @@ process.on('SIGINT', () => {
 });
 
 function startup() {
-  socket = standaloneSocketInit();
+  socket = new SocketEmulator();
+  new AsteroidsServer(socket);
   bot = new Bot(socket);
   configureSocket();
   setTimeout(init, 25);

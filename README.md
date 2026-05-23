@@ -9,4 +9,4 @@ I noticed in May of 2025 (a bit late, yes) that the game had been switched from 
 
 Copyright
 ---------
-All code except `bot-logic.js` is copyright the Hermatrix authors (but may have modifications by me).
+All code except where noted in the beginning of the file is copyright the Hermatrix authors (but may have modifications by me).
