@@ -25,7 +25,7 @@ $(document).ready(() => {
   }
   function draw() {
     drawObj.draw();
-    setTimeout(draw, 16);
+    setTimeout(draw, bot.isEnabled() ? 64 : 16);
   }
   function init() {
     console.log("do init");
