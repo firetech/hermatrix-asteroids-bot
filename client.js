@@ -1,13 +1,11 @@
-import {io} from 'socket.io-client';
-import https from 'https';
-import {GameState, IsGameState, IsStoppedState} from './common.js';
+import standaloneSocketInit from "./common/standalone.js";
+import {GameState, IsGameState, IsStoppedState} from './common/common.js';
 import Bot from "./bot-logic.js";
 
 
 console.log('init');
 let socket;
 let bot;
-let qaStaHnuqjayData = '';
 let lastGameState = GameState.Stopped;
 let gameState = GameState.Stopped;
 let lastScore = -1;
@@ -23,42 +21,11 @@ process.on('SIGINT', () => {
   process.exit();
 });
 
-function httpget(url) {
-  return new Promise((resolve, reject) => {
-    https.get(`https://hermatrix.net${url}`, (resp) => {
-      let data = '';
-
-      resp.on('data', (chunk) => {
-        data += chunk;
-      });
-
-      resp.on('end', () => {
-        resolve(data);
-      });
-
-    }).on('error', (err) => {
-      reject(err);
-    });
-  });
-}
 function startup() {
-  getqaStaHnuqjay();
-  httpget('/asteroids/quota')
-    .then((data) => {
-      console.log(data);
-      if (data.trim() == 'allowed') {
-        socket = io('https://hermatrix.net', {
-          transports: [ 'websocket' ],
-        });
-        bot = new Bot(socket);
-        socket.io.on('error', (err) => {
-          console.error(err);
-          process.exit();
-        });
-        configureSocket();
-        setTimeout(init, 25);
-      }
-    });
+  socket = standaloneSocketInit();
+  bot = new Bot(socket);
+  configureSocket();
+  setTimeout(init, 25);
 }
 function init() {
   console.log('do init');
@@ -85,9 +52,6 @@ function configureSocket() {
       setTimeout(init, 5000);
     }
     lastGameState = gameState;
-    if (serverdata.global_score <= 0 && qaStaHnuqjayData == '') {
-      getqaStaHnuqjay();
-    }
   });
   socket.on("ast.error", (what) => {
     console.error(what);
@@ -101,11 +65,5 @@ function configureSocket() {
         socket.emit('ast.start');
       }, 250);
     }
-  });
-}
-function getqaStaHnuqjay() {
-  return httpget('/asteroids/qaStaHnuqjay').then((data) => {
-    qaStaHnuqjayData = data;
-    console.log(`qaStaHnuqjay: ${data}`);
   });
 }

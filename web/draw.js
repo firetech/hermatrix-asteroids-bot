@@ -1,4 +1,5 @@
-import {GameState, IsGameState} from "./common.js";
+import {GameState, IsGameState} from "./common/common.js";
+import AsteroidObjects from "./common/objects.json.proxy.js";
 
 export class Draw {
   constructor(canvas) {
@@ -7,8 +8,6 @@ export class Draw {
     this.shootTargets = [];
     this.gameState = GameState.Stopped;
     this.lastGameState = GameState.Stopped;
-    this.lastDataTimestamp = 0;
-    this.tickFactor = 1.0;
     this.lastDrawTimestamp = 0;
     this.asteroid_templates = [];
     this.ship_template = [];
@@ -34,11 +33,6 @@ export class Draw {
     if (IsGameState(this.gameState)) {
       this.data = data;
     }
-    const dataTimestamp = Date.now();
-    if (this.lastDataTimestamp) {
-      this.tickFactor = 64 / (dataTimestamp - this.lastDataTimestamp);
-    }
-    this.lastDataTimestamp = dataTimestamp;
   }
   setTarget(asteroid, priority) {
     if (asteroid) {
@@ -51,14 +45,18 @@ export class Draw {
     this.shootTargets = targets;
   }
   loadAsteroidTemplates() {
+    /*
     const self = this;
     $.ajax({
-      url: "objects.json",
+      url: "../objects.json",
       async: false
     }).done(function(json) {
       self.asteroid_templates = json["asteroids"];
       self.ship_template = json["ship"];
     });
+    */
+    this.asteroid_templates = AsteroidObjects["asteroids"];
+    this.ship_template = AsteroidObjects["ship"];
   }
   isDrawState(gameState) {
     return IsGameState(gameState) || gameState == GameState.Dead;

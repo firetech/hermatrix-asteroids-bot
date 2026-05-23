@@ -1,48 +1,28 @@
-import {io} from "./socket.io.js";
-import {GameState, IsGameState, IsStoppedState} from "./common.js";
+import standaloneSocketInit from "./common/standalone.js";
+import {GameState, IsGameState, IsStoppedState} from "./common/common.js";
 import {DrawGL2} from "./drawgl.js";
 import Bot from "./bot-logic.js";
 $(document).ready(() => {
   console.log("init");
-  var socket;
+  const socket = standaloneSocketInit();
+  const bot = new Bot(socket);
   const container = document.getElementById("canvas_container");
   const canvas = document.getElementById("canvas");
   const autorestart = document.getElementById("autorestart");
   const ctx = canvas.getContext("webgl2");
   const start = document.getElementById("start");
   const score = document.getElementById("score");
-  const gscore = document.getElementById("global_score");
-  const qaStaHnuqjay = document.getElementById("qaStaHnuqjay");
-  let qaStaHnuqjayData = "";
   let lastVisibilityChangedTimestamp = 0;
   var resizeId;
   const drawObj = new DrawGL2(canvas, ctx);
   let lastGameState = GameState.Stopped;
   let gameState = GameState.Stopped;
-  let bot;
   startup();
   function startup() {
     drawObj.loadAsteroidTemplates();
     drawObj.init();
-    getqaStaHnuqjay().done(() => {
-      qaStaHnuqjay.textContent = qaStaHnuqjayData;
-    });
-    $.ajax({
-      url: "https://hermatrix.net/asteroids/quota",
-      async: true,
-      success: (data) => {
-        if (data.trim() == "allowed") {
-          socket = io("https://hermatrix.net");
-          bot = new Bot(socket);
-          configureSocket();
-          setTimeout(init, 25);
-        } else {
-          $("#quota_container").show();
-        }
-      },
-      error: (_) => {
-      }
-    });
+    configureSocket();
+    setTimeout(init, 25);
   }
   function draw() {
     drawObj.draw();
@@ -59,7 +39,6 @@ $(document).ready(() => {
       drawObj.setData(serverdata);
       bot.tick(serverdata, drawObj);
       if (IsGameState(gameState)) {
-        gscore.textContent = serverdata.global_score + "";
         score.textContent = serverdata.score + "";
       }
       if (gameState == GameState.Dead && lastGameState != GameState.Dead) {
@@ -67,11 +46,6 @@ $(document).ready(() => {
         showRestart();
       }
       lastGameState = gameState;
-      if (serverdata.global_score <= 0 && qaStaHnuqjayData == "") {
-        getqaStaHnuqjay().done(() => {
-          qaStaHnuqjay.textContent = qaStaHnuqjayData;
-        });
-      }
     });
     socket.on("ast.error", (what) => {
       alert(what);
@@ -82,13 +56,9 @@ $(document).ready(() => {
       canvas.height = height;
       const padding = (window.innerWidth - width - 10) / 2;
       canvas.style.left = padding + "px";
-      gscore.style.right = canvas.style.left;
       score.style.left = canvas.style.left;
       start.style.left = (width - start.clientWidth) / 2 + padding + "px";
       start.style.top = (height - start.clientHeight) / 2 + "px";
-      qaStaHnuqjay.style.left = start.style.left;
-      qaStaHnuqjay.style.top = (height - start.clientHeight) / 2 + start.clientHeight + 25 + "px";
-      qaStaHnuqjay.style.width = start.clientWidth + "px";
       drawObj.clearData();
       if (gameState == GameState.Dead) {
         gameState = GameState.Stopped;
@@ -100,19 +70,6 @@ $(document).ready(() => {
       if (container.style.visibility != "visible") {
         container.style.visibility = "visible";
         start.style.visibility = "visible";
-        qaStaHnuqjay.textContent = qaStaHnuqjayData;
-      }
-    });
-  }
-  function getqaStaHnuqjay() {
-    return $.ajax({
-      url: "https://hermatrix.net/asteroids/qaStaHnuqjay",
-      async: true,
-      success: (data) => {
-        qaStaHnuqjayData = data.trim();
-        ;
-      },
-      error: (_) => {
       }
     });
   }

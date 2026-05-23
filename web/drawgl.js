@@ -1,6 +1,6 @@
 import {mat4} from "./gl-matrix.js";
 import {Draw} from "./draw.js";
-import {GameState} from "./common.js";
+import {GameState} from "./common/common.js";
 const _DrawGL2 = class extends Draw {
   constructor(canvas, context) {
     super(canvas);
@@ -223,7 +223,7 @@ const _DrawGL2 = class extends Draw {
     const lastTimestamp = Math.max(this.lastDataTimestamp, this.lastDrawTimestamp);
     const now = Date.now();
     const timediff = now - lastTimestamp;
-    const factor = (1 / (100 / timediff)) * this.tickFactor;
+    const factor = (1 / (100 / timediff));
     if (this.gameState == GameState.Running && timediff < 1e3) {
       data.ship.position = this.addVelocity(data.ship.position, data.ship.velocity, factor);
       data.asteroids.forEach((asteroid, idx) => {
