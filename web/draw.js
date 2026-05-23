@@ -5,6 +5,7 @@ export class Draw {
   constructor(canvas) {
     this.data = null;
     this.target = null;
+    this.debug = false;
     this.shootTargets = [];
     this.gameState = GameState.Stopped;
     this.lastGameState = GameState.Stopped;
@@ -13,6 +14,8 @@ export class Draw {
     this.ship_template = [];
     this.scale = 1;
     this.canvas = canvas;
+    this.asteroid_templates = AsteroidObjects["asteroids"];
+    this.ship_template = AsteroidObjects["ship"];
   }
   draw() {
   }
@@ -44,19 +47,8 @@ export class Draw {
   setShootTargets(targets) {
     this.shootTargets = targets;
   }
-  loadAsteroidTemplates() {
-    /*
-    const self = this;
-    $.ajax({
-      url: "../objects.json",
-      async: false
-    }).done(function(json) {
-      self.asteroid_templates = json["asteroids"];
-      self.ship_template = json["ship"];
-    });
-    */
-    this.asteroid_templates = AsteroidObjects["asteroids"];
-    this.ship_template = AsteroidObjects["ship"];
+  setDebug(value) {
+    this.debug = value;
   }
   isDrawState(gameState) {
     return IsGameState(gameState) || gameState == GameState.Dead;

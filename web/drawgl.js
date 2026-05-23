@@ -2,10 +2,11 @@ import {mat4} from "./gl-matrix.js";
 import {Draw} from "./draw.js";
 import {GameState} from "./common/common.js";
 const _DrawGL2 = class extends Draw {
-  constructor(canvas, context) {
+  constructor(canvas, context, debug = false) {
     super(canvas);
     this.context = context;
     this.program = null;
+    this.debug = debug
   }
   init() {
     const vertexShaderSrc = `
@@ -154,20 +155,19 @@ const _DrawGL2 = class extends Draw {
     mat4.translate(transform, transform, [position[0], position[1], 0]);
     mat4.rotate(transform, transform, orientation / 180 * Math.PI, [0, 0, 1]);
     mat4.scale(transform, transform, [scale, scale, 1]);
-    let color;
-    switch (targetMode) {
-      case 1:
-        color = [1, 0, 0, 1];
-        break;
-      case 2:
-        color = [0.7, 0, 1, 1];
-        break;
-      case 3:
-        color = [0, 0.7, 1, 1];
-        break;
-      default:
-        color = [1, 1, 1, 1];
-        break;
+    let color = [1, 1, 1, 1];
+    if (this.debug) {
+      switch (targetMode) {
+        case 1:
+          color = [1, 0, 0, 1];
+          break;
+        case 2:
+          color = [0.7, 0, 1, 1];
+          break;
+        case 3:
+          color = [0, 0.7, 1, 1];
+          break;
+      }
     }
     gl.uniform4fv(gl.getUniformLocation(this.program, "fColor"), color);
     gl.uniformMatrix4fv(gl.getUniformLocation(this.program, "transformation"), false, transform);
@@ -175,7 +175,9 @@ const _DrawGL2 = class extends Draw {
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.LINE_LOOP, 0, len);
 
-    this.renderBullet(position, [velocity[0]*10, velocity[1]*10]);
+    if (this.debug) {
+      this.renderBullet(position, [velocity[0]*10, velocity[1]*10]);
+    }
   }
   renderBullet(position, velocity) {
     if (this.program == null) {
@@ -200,19 +202,22 @@ const _DrawGL2 = class extends Draw {
     gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
     gl.drawArrays(gl.LINES, 0, len);
 
-    coords = [];
-    coords.push(0, 0, 0, velocity[0], velocity[1], 0);
-    const mesh2 = this.Mesh(coords);
-    if (mesh2 == null) {
-      return;
+    if (this.debug) {
+      // Velocity indicator
+      coords = [];
+      coords.push(0, 0, 0, velocity[0], velocity[1], 0);
+      const mesh2 = this.Mesh(coords);
+      if (mesh2 == null) {
+        return;
+      }
+      transform = mat4.create();
+      mat4.translate(transform, transform, [x, y, 0]);
+      gl.uniform4fv(gl.getUniformLocation(this.program, "fColor"), [0, 1, 0, 1]);
+      gl.uniformMatrix4fv(gl.getUniformLocation(this.program, "transformation"), false, transform);
+      const len2 = coords.length / 3;
+      gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+      gl.drawArrays(gl.LINES, 0, len2);
     }
-    transform = mat4.create();
-    mat4.translate(transform, transform, [x, y, 0]);
-    gl.uniform4fv(gl.getUniformLocation(this.program, "fColor"), [0, 1, 0, 1]);
-    gl.uniformMatrix4fv(gl.getUniformLocation(this.program, "transformation"), false, transform);
-    const len2 = coords.length / 3;
-    gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
-    gl.drawArrays(gl.LINES, 0, len2);
   }
   draw() {
     this.renderViewport();

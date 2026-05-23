@@ -29,6 +29,7 @@ const BULLET_SPEED = 38.4;
 
 export default class Bot {
   constructor(socket) {
+    this.enabled = true;
     this.socket = socket;
     this.heldDir = null;
     this.heldSpeed = null;
@@ -53,7 +54,7 @@ export default class Bot {
     }
   }
   turn(dir) {
-    if (this.heldDir != dir) {
+    if (this.enabled && this.heldDir != dir) {
       this.stopTurn();
       this.socket.emit("ast.keydown", `Arrow${dir}`);
       this.heldDir = dir;
@@ -68,16 +69,29 @@ export default class Bot {
     }
   }
   speed(dir, currentSpeed) {
-    if (!this.heldSpeed || this.heldSpeed[0] != dir) {
+    if (this.enabled && (!this.heldSpeed || this.heldSpeed[0] != dir)) {
       console.log(`Speed ${dir} (${currentSpeed.toFixed(2)})`);
       this.cancelSpeed();
       this.socket.emit("ast.keydown", `Arrow${dir}`);
-      const holdTime = Math.min(Math.max(40, 20 * Math.abs(currentSpeed)), 100);
-      this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), holdTime) ];
+      const actualHoldTime = Math.min(Math.max(40, 20 * Math.abs(currentSpeed)), 100);
+      this.heldSpeed = [ dir, setTimeout(this.cancelSpeed.bind(this), actualHoldTime) ];
+    }
+  }
+
+  isEnabled() {
+    return this.enabled;
+  }
+  setEnabled(value) {
+    this.enabled = value
+    if (!value) {
+      this.dead();
     }
   }
 
   tick(serverdata, drawObj = null) {
+    if (!this.enabled) {
+      return;
+    }
     const ship = serverdata.ship;
     const shipPos = ship.position;
     const shipVel = ship.velocity;
@@ -95,8 +109,12 @@ export default class Bot {
     }
 
     // Slow down to a halt
+    const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
+    if (this.speedStatus.done && !sameSpeed) {
+      // Someone changed the speed.
+      this.speedStatus = {};
+    }
     if (!this.speedStatus.done) {
-      const sameSpeed = Math.abs(this.speedStatus.lastSpeed - currentSpeed) < 1e-5;
       if (sameSpeed && this.speedStatus.count >= 25) {
         if (currentSpeed < 0 || currentSpeed > 0.5) {
           // Game is lagging too much, skip speed control.

@@ -24,9 +24,9 @@
  */
 
 import {WorkerSocket} from "./standalone.js";
-import {Wrapper as AsteroidsServer} from "./main.js";
+import {Wrapper as AsteroidsServer} from "./common/main.js";
 
 const socket = new WorkerSocket(self);
-const server = new AsteroidsServer(socket);
+new AsteroidsServer(socket);
 
 console.log("Worker ready.");

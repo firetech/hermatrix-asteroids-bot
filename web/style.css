@@ -61,7 +61,7 @@ body {
   text-align: left;
 }
 
-#autorestart_container
+#controls_container
 {
   position: absolute;
   bottom: 0;
@@ -70,7 +70,9 @@ body {
   border-radius: 5px;
   user-select: none;
 }
-#autorestart_container label {
+#controls_container label {
   padding-left: 0.5em;
+  margin-right: 1em;
   color :rgba(177, 0, 255, 0.7);
+  font-family: monospace;
 }

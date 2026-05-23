@@ -14,12 +14,11 @@ $(document).ready(() => {
   const score = document.getElementById("score");
   let lastVisibilityChangedTimestamp = 0;
   var resizeId;
-  const drawObj = new DrawGL2(canvas, ctx);
+  const drawObj = new DrawGL2(canvas, ctx, bot.isEnabled());
   let lastGameState = GameState.Stopped;
   let gameState = GameState.Stopped;
   startup();
   function startup() {
-    drawObj.loadAsteroidTemplates();
     drawObj.init();
     configureSocket();
     setTimeout(init, 25);
@@ -100,6 +99,10 @@ $(document).ready(() => {
     } else {
       socket.emit("ast.start");
     }
+  });
+  $("#bot").on("change", (e) => {
+    bot.setEnabled(e.target.checked);
+    drawObj.setDebug(e.target.checked);
   });
   function showRestart() {
     if (autorestart.checked) {
