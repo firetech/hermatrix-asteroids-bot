@@ -10,4 +10,6 @@ export default class SocketEmulator {
       this.callbacks.get(name)(...args);
     }
   }
+  close() {
+  }
 }
